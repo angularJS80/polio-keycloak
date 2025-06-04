@@ -1,3 +1,10 @@
 spring:
   application:
     name: polio-keycloak
+keycloak:
+  client-id: polio-toy-client
+  client-secret: I6uiQiYIegQVvvIsAgFUpexpgNjfR86H
+  realm: polio
+  username: polio-admin
+  password: polio-admin
+  server-url: http://localhost:8089
