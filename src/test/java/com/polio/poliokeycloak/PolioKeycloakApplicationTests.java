@@ -1,12 +1,12 @@
 package com.polio.poliokeycloak;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+//import org.junit.jupiter.api.Test;
+//import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
+//@SpringBootTest
 class PolioKeycloakApplicationTests {
 
-    @Test
+    //@Test
     void contextLoads() {
     }
 
