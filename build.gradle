@@ -13,6 +13,17 @@ java {
     }
 }
 
+// 실행 가능한 JAR 비활성화
+bootJar {
+    enabled = false
+}
+
+// 일반 JAR을 기본 아티팩트로 사용하도록 설정
+jar {
+    enabled = true
+    archiveClassifier.set("") // <- '-plain' 제거
+}
+
 configurations {
     compileOnly {
         extendsFrom annotationProcessor
