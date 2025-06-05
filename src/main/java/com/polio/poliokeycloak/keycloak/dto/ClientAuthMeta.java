@@ -38,4 +38,10 @@ public class ClientAuthMeta {
                 .filter(role -> role.getId().equals(roleid))
                 .findFirst();
     }
+
+    public Optional<Policy> findPolicyById(String id) {
+        return this.policies.stream()
+                .filter(policy -> policy.getId().equals(id))
+                .findFirst();
+    }
 }

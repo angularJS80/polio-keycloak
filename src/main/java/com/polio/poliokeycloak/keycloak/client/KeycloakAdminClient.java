@@ -204,5 +204,7 @@ public class KeycloakAdminClient {
     public Optional<Role> findRoleById(String id) {
         return CLIENT_AUTH_META.findRole(id);
     }
-
+    public Optional<Policy> findPolicyByid(String id) {
+        return CLIENT_AUTH_META.findPolicyById(id);
+    }
 }

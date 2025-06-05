@@ -11,8 +11,9 @@ import java.util.Optional;
 public class PermissionRule {
     String permissionId;
     Resource resource;
-    Policy policy;
+    List<Policy> policys = new ArrayList<>();
     List<RoleRule> roleRules = new ArrayList<>();
+
 
     public PermissionRule(Permission permission) {
         this.permissionId = permission.getId();
@@ -26,8 +27,8 @@ public class PermissionRule {
         this.resource = resource;
     }
 
-    public void setPolicy(Policy policy) {
-        this.policy = policy;
+    public void addPolicy(Policy policy) {
+        this.policys.add(policy);
     }
 
 
@@ -39,3 +40,4 @@ public class PermissionRule {
         return Optional.ofNullable(this.resource);
     }
 }
+

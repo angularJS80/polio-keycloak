@@ -16,7 +16,9 @@ public class RoleAssociationService {
     private final KeycloakAdminClient keycloakAdminClient;
     public PermissionRule associateRole(PermissionRule permissionRule) {
         keycloakAdminClient.retrievePolicyPermissionId(permissionRule.getPermissionId()).forEach(policy -> {
-            permissionRule.setPolicy(policy);
+            keycloakAdminClient.findPolicyByid(policy.getId())
+                    .ifPresent(permissionRule::addPolicy);
+
 
             keycloakAdminClient.findPolicyWithRoleByPolicyId(policy.getId())
                     .flatMap(PolicyWithRole::findRoles)
