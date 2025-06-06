@@ -2,21 +2,25 @@ package com.polio.poliokeycloak.keycloak.client;
 
 import com.polio.poliokeycloak.keycloak.client.dto.*;
 import com.polio.poliokeycloak.keycloak.client.prop.KeycloakSecurityProperties;
+import com.polio.poliokeycloak.keycloak.client.util.ScopeMaker;
 import com.polio.poliokeycloak.keycloak.dto.ClientAuthMeta;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 @EnableConfigurationProperties(KeycloakSecurityProperties.class)
@@ -143,9 +147,32 @@ public class KeycloakAdminClient {
         ).getBody();
     }
 
-    public Map<String, Object> requestRpt(String accessToken, String resourceId, List<String> scopes) {
+    public IdentityInfo createScope(String scopeName) {
+        String scopeUrl = String.format("%s/admin/realms/%s/clients/%s/authz/resource-server/scope",
+                props.getServerUrl(), props.getRealm(), CLIENT_UUID);
+
+        Map<String, Object> scopeRequest = new HashMap<>();
+        scopeRequest.put("name", scopeName);
+        scopeRequest.put("displayName", "");
+        scopeRequest.put("iconUri", "");
+
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(scopeRequest, HTTP_ENTITY.getHeaders());
+
+        ResponseEntity<IdentityInfo> response = restTemplate.exchange(
+                scopeUrl,
+                HttpMethod.POST,
+                request,
+                IdentityInfo.class
+        );
+
+        return response.getBody();
+    }
+
+
+    public Optional<Map<String, Object>> requestRpt(String accessToken, String resourceId, String scopeName) {
         String tokenEndpoint = String.format("%s/realms/%s/protocol/openid-connect/token",
                 props.getServerUrl(), props.getRealm());
+
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -155,21 +182,28 @@ public class KeycloakAdminClient {
         body.add("grant_type", "urn:ietf:params:oauth:grant-type:uma-ticket");
         body.add("audience", props.getClientId());
 
-        String permission = scopes == null || scopes.isEmpty()
+        String permission = scopeName == null || scopeName.isEmpty()
                 ? resourceId
-                : resourceId + "#" + String.join(",", scopes);
+                : resourceId + "#" + scopeName;
         body.add("permission", permission);
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
 
-        ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
-                tokenEndpoint,
-                HttpMethod.POST,
-                request,
-                new ParameterizedTypeReference<>() {}
-        );
+        try {
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    tokenEndpoint,
+                    HttpMethod.POST,
+                    request,
+                    new ParameterizedTypeReference<>() {}
+            );
+            return Optional.ofNullable(response.getBody());
+        } catch (HttpClientErrorException | HttpServerErrorException ex) {
+            log.warn("Failed to request RPT from Keycloak: {} - {}", ex.getStatusCode(), ex.getMessage());
+        } catch (Exception ex) {
+            log.error("Unexpected error while requesting RPT", ex);
+        }
 
-        return response.getBody();
+        return Optional.empty();
     }
 
 
@@ -239,10 +273,31 @@ public class KeycloakAdminClient {
     }
 
     public Optional<Resource> findResourceByUri(String requestUri) {
+        AntPathMatcher antPathMatcher = new AntPathMatcher();
         return CLIENT_AUTH_META.getResources()
                 .stream()
-                .filter(resource -> resource.getUris().stream().filter(uri->uri.equals(requestUri)).findFirst().isPresent())
+                .filter(resource -> resource.getUris().stream().filter(
+                        uri->  antPathMatcher.match(uri,requestUri)
+                ).findFirst().isPresent())
                 .findFirst();
+
+    }
+
+    public String findOrCreateScope(String resourceId, HttpMethod httpMethod) {
+        return  CLIENT_AUTH_META.findResource(resourceId)
+                .map(resource -> {
+                    String targetScope = ScopeMaker.makeScopeName(resource.getName(),httpMethod);
+
+                    boolean hasScope = resource.findScope(targetScope)
+                            .map(Resource.Scope::getName)
+                            .isPresent();
+
+
+                    if(!hasScope){
+                        createScope(targetScope);
+                    }
+                    return targetScope;
+                }).orElse(null);
 
     }
 }
