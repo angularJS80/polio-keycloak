@@ -154,7 +154,11 @@ public class KeycloakAdminClient {
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
         body.add("grant_type", "urn:ietf:params:oauth:grant-type:uma-ticket");
         body.add("audience", props.getClientId());
-        body.add("permission", resourceId + "#" + String.join(",", scopes)); // 예: resourceId#scope1,scope2
+
+        String permission = scopes == null || scopes.isEmpty()
+                ? resourceId
+                : resourceId + "#" + String.join(",", scopes);
+        body.add("permission", permission);
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
 
