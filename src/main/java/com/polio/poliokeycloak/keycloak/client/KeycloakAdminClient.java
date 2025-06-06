@@ -143,6 +143,32 @@ public class KeycloakAdminClient {
         ).getBody();
     }
 
+    public Map<String, Object> requestRpt(String accessToken, String resourceId, List<String> scopes) {
+        String tokenEndpoint = String.format("%s/realms/%s/protocol/openid-connect/token",
+                props.getServerUrl(), props.getRealm());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        headers.setBearerAuth(accessToken); // 기존 Access Token
+
+        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+        body.add("grant_type", "urn:ietf:params:oauth:grant-type:uma-ticket");
+        body.add("audience", props.getClientId());
+        body.add("permission", resourceId + "#" + String.join(",", scopes)); // 예: resourceId#scope1,scope2
+
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
+
+        ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                tokenEndpoint,
+                HttpMethod.POST,
+                request,
+                new ParameterizedTypeReference<>() {}
+        );
+
+        return response.getBody();
+    }
+
+
     public List<Policy> retrievePolicyPermissionId(String permissionId) {
         String resourceUrl = String.format("%s/admin/realms/%s/clients/%s/authz/resource-server/policy/%s/associatedPolicies",
                 props.getServerUrl(), props.getRealm(), CLIENT_UUID, permissionId);
@@ -206,5 +232,13 @@ public class KeycloakAdminClient {
     }
     public Optional<Policy> findPolicyByid(String id) {
         return CLIENT_AUTH_META.findPolicyById(id);
+    }
+
+    public Optional<Resource> findResourceByUri(String requestUri) {
+        return CLIENT_AUTH_META.getResources()
+                .stream()
+                .filter(resource -> resource.getUris().stream().filter(uri->uri.equals(requestUri)).findFirst().isPresent())
+                .findFirst();
+
     }
 }

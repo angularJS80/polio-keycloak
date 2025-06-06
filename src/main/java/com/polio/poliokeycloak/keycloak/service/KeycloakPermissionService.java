@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 
@@ -15,6 +16,16 @@ public class KeycloakPermissionService {
     private final KeycloakAdminClient keycloakAdminClient;
     private final ResourceAssociationService resourceAssociationService;
     private final RoleAssociationService roleAssociationService;
+
+
+    public boolean requestUmaTicket(String accessToken, String uri, List<String> scopes){
+        return keycloakAdminClient.findResourceByUri(uri)
+                .map(resource -> {
+                    Map<String,Object> rptBody = keycloakAdminClient.requestRpt(accessToken,resource.get_id(),scopes);
+                    return rptBody != null && rptBody.containsKey("access_token");
+                }).orElse(false);
+
+    }
 
     public List<PermissionRule> getPermissionRules() {
         return keycloakAdminClient.getPermissions()
