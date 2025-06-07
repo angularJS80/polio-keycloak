@@ -14,6 +14,7 @@ public class Resource extends _IdentityInfo {
 
     private List<String> uris;
     private List<Scope> scopes;
+    private List<Permission> permissions;
 
     public Optional<Scope> findScope(String targetScope) {
         return findScopes()
@@ -26,6 +27,15 @@ public class Resource extends _IdentityInfo {
     public Optional<List<Scope>> findScopes(){
         return Optional.ofNullable(this.scopes);
     }
+
+    public boolean hasPermissions(){
+        return Optional.ofNullable(permissions).isPresent();
+    }
+
+    public boolean emptyPermissions(){
+        return !hasPermissions();
+    }
+
 
     @Data
     @NoArgsConstructor

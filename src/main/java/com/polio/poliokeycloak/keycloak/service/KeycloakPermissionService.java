@@ -2,6 +2,7 @@ package com.polio.poliokeycloak.keycloak.service;
 
 import com.polio.poliokeycloak.keycloak.client.KeycloakAdminClient;
 import com.polio.poliokeycloak.keycloak.client.dto.PermissionRule;
+import com.polio.poliokeycloak.keycloak.client.dto.Resource;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
@@ -46,10 +47,14 @@ public class KeycloakPermissionService {
     }
 
 
+    public List<Resource> getResources() {
+        return keycloakAdminClient.getResources();
+    }
 
-
-
-
-
-
+    public List<Resource> hasNoPermissionsResources(){
+        return getResources()
+                .stream()
+                .filter(Resource::emptyPermissions)
+                .collect(Collectors.toList());
+    }
 }

@@ -19,6 +19,7 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -63,13 +64,15 @@ public class KeycloakAdminClient {
         String resourceUrl = String.format("%s/admin/realms/%s/clients/%s/authz/resource-server/resource",
                 props.getServerUrl(), props.getRealm(), CLIENT_UUID);
 
-        return restTemplate.exchange(
+        List<Resource> resources =  restTemplate.exchange(
                 resourceUrl,
                 HttpMethod.GET,
                 HTTP_ENTITY,
                 new ParameterizedTypeReference<List<Resource>>() {
                 }
         ).getBody();
+
+        return associatedPermissionResources(resources);
     }
 
     private List<Permission> retrieveAllPermissions() {
@@ -134,17 +137,18 @@ public class KeycloakAdminClient {
         ).getBody();
     }
 
-    private List<IdentityInfo> retrieveScopeIdentityResourceId(String resourceId) {
-        String resourceUrl = String.format("%s/admin/realms/%s/clients/%s/authz/resource-server/resource/%s/scopes",
+    private Optional<List<Permission>> retrievePermissionsResourceId(String resourceId) {
+        String resourceUrl = String.format("%s/admin/realms/%s/clients/%s/authz/resource-server/resource/%s/permissions",
                 props.getServerUrl(), props.getRealm(), CLIENT_UUID, resourceId);
 
-        return restTemplate.exchange(
+         List<Permission> permissions =  restTemplate.exchange(
                 resourceUrl,
                 HttpMethod.GET,
                 HTTP_ENTITY,
-                new ParameterizedTypeReference<List<IdentityInfo>>() {
+                new ParameterizedTypeReference<List<Permission>>() {
                 }
         ).getBody();
+         return Optional.ofNullable(permissions);
     }
 
     public IdentityInfo createScope(String scopeName) {
@@ -261,6 +265,24 @@ public class KeycloakAdminClient {
         return CLIENT_AUTH_META.getPermissions();
     }
 
+    public List<Resource> associatedPermissionResources(List<Resource> resources) {
+
+        return resources.stream()
+                .map(resource -> {
+                    retrievePermissionsResourceId(resource.get_id())
+                            .ifPresent(permissions -> {
+                                if(permissions.size()>0){
+
+                                    resource.setPermissions(permissions);
+                                }
+                            });
+                    return resource;
+                        }
+                ).collect(Collectors.toList());
+
+    }
+
+
     public Optional<Resource> findResourceById(String id) {
         return CLIENT_AUTH_META.findResource(id);
     }
@@ -299,5 +321,9 @@ public class KeycloakAdminClient {
                     return targetScope;
                 }).orElse(null);
 
+    }
+
+    public List<Resource> getResources() {
+        return CLIENT_AUTH_META.getResources();
     }
 }
