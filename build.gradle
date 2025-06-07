@@ -36,6 +36,7 @@ repositories {
 
 dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-web:3.5.0'
+    implementation("org.springframework.boot:spring-boot-starter-security")
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server:3.5.0'
     compileOnly 'org.projectlombok:lombok:1.18.26'
     annotationProcessor 'org.projectlombok:lombok:1.18.26'

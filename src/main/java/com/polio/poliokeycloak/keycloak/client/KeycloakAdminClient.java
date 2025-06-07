@@ -272,7 +272,6 @@ public class KeycloakAdminClient {
                     retrievePermissionsResourceId(resource.get_id())
                             .ifPresent(permissions -> {
                                 if(permissions.size()>0){
-
                                     resource.setPermissions(permissions);
                                 }
                             });
