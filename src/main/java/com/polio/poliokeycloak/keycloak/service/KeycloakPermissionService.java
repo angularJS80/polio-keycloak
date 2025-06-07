@@ -57,4 +57,11 @@ public class KeycloakPermissionService {
                 .filter(Resource::emptyPermissions)
                 .collect(Collectors.toList());
     }
+
+    public boolean isNoPermission(String targetUrl) {
+        return hasNoPermissionsResources().stream()
+                .anyMatch(resource -> resource.getUris().contains(targetUrl));
+    }
+
+
 }
