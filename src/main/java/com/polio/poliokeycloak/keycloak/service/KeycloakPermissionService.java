@@ -6,6 +6,7 @@ import com.polio.poliokeycloak.keycloak.client.dto.Resource;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
+import org.springframework.util.AntPathMatcher;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -59,8 +60,15 @@ public class KeycloakPermissionService {
     }
 
     public boolean isNoPermission(String targetUrl) {
+        AntPathMatcher antPathMatcher = new AntPathMatcher();
         return hasNoPermissionsResources().stream()
-                .anyMatch(resource -> resource.getUris().contains(targetUrl));
+                .anyMatch(resource ->
+                      resource.getUris()
+                            .stream()
+                            .anyMatch(uri-> antPathMatcher.match(uri,targetUrl))
+
+
+                );
     }
 
 
