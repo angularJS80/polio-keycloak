@@ -23,6 +23,12 @@ public class KeycloakPermissionService {
     private final RoleAssociationService roleAssociationService;
 
 
+    public List<String> getUris(){
+        return getResources()
+                .stream()
+                .flatMap(resource -> resource.getUris().stream())
+                .collect(Collectors.toList());
+    }
 
     public boolean umaCheck(AuthorizationContext authorizationContext, Authentication authentication, String uri){
         authorizationContext.getExchange().getRequest().getMethod();
