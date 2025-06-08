@@ -13,6 +13,17 @@ java {
     }
 }
 
+// 실행 가능한 JAR 비활성화
+bootJar {
+    enabled = false
+}
+
+// 일반 JAR을 기본 아티팩트로 사용하도록 설정
+jar {
+    enabled = true
+    archiveClassifier.set("") // <- '-plain' 제거
+}
+
 configurations {
     compileOnly {
         extendsFrom annotationProcessor
@@ -24,12 +35,12 @@ repositories {
 }
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'org.springframework.boot:spring-boot-starter-web:3.5.0'
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server:3.5.0'
+    compileOnly 'org.projectlombok:lombok:1.18.26'
+    annotationProcessor 'org.projectlombok:lombok:1.18.26'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test:3.5.0'
 }
 
 tasks.named('test') {
