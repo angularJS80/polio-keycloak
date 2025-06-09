@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.security.web.server.authorization.AuthorizationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.util.AntPathMatcher;
@@ -30,6 +31,7 @@ public class KeycloakPermissionService {
                 .collect(Collectors.toList());
     }
 
+    @Deprecated
     public boolean umaCheck(AuthorizationContext authorizationContext, Authentication authentication, String uri){
         authorizationContext.getExchange().getRequest().getMethod();
 
@@ -39,6 +41,19 @@ public class KeycloakPermissionService {
             isValidUmaTicket = requestUmaTicket(tokenValue,
                     uri,authorizationContext.getExchange().getRequest().getMethod());
 
+        }
+
+        return isValidUmaTicket;
+    }
+
+    public boolean umaCheck(HttpMethod httpMethod, Authentication authentication, String uri){
+
+
+        boolean isValidUmaTicket =false;
+        if (authentication instanceof JwtAuthenticationToken jwtAuthenticationToken) {
+            String tokenValue = jwtAuthenticationToken.getToken().getTokenValue();
+            isValidUmaTicket = requestUmaTicket(tokenValue,
+                    uri,httpMethod);
         }
 
         return isValidUmaTicket;
