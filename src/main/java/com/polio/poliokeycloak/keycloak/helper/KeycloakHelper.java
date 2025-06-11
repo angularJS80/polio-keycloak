@@ -1,53 +1,43 @@
-package com.polio.poliokeycloak.keycloak.service;
+package com.polio.poliokeycloak.keycloak.helper;
 
 import com.polio.poliokeycloak.keycloak.client.KeycloakAdminClient;
-import com.polio.poliokeycloak.keycloak.client.dto.PermissionRule;
 import com.polio.poliokeycloak.keycloak.client.dto.Resource;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
-import org.springframework.util.AntPathMatcher;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 
-@Service
+@Component
 @RequiredArgsConstructor
-public class KeycloakPermissionService {
+public class KeycloakHelper {
     private final KeycloakAdminClient keycloakAdminClient;
-    private final ResourceAssociationService resourceAssociationService;
-    private final RoleAssociationService roleAssociationService;
 
-
-    public List<String> getUris(){
-        return getResources()
+    public List<String> hasPermissionsPatterns(){
+        return hasPermissionsResources()
                 .stream()
                 .flatMap(resource -> resource.getUris().stream())
                 .collect(Collectors.toList());
     }
 
-    public List<String> getPermissionUris(){
-        return getUris()
+    public List<String> hasNoPermissionsPatterns(){
+        return hasNoPermissionsResources()
                 .stream()
-                .filter(uri-> !isNoPermission(uri))
-                .collect(Collectors.toList());
-    }
-
-    public List<String> getHasNoPermisUris(){
-       return hasNoPermissionsResources().stream()
                 .flatMap(resource -> resource.getUris().stream())
-                .toList();
+                .collect(Collectors.toList());
     }
 
     public AuthorizationDecision decide(HttpMethod httpMethod, Authentication authentication, String uri) {
         return new AuthorizationDecision(umaCheck(httpMethod, authentication, uri));
     }
 
-    public boolean umaCheck(HttpMethod httpMethod, Authentication authentication, String uri){
+    private boolean umaCheck(HttpMethod httpMethod, Authentication authentication, String uri){
 
         boolean isValidUmaTicket =false;
         if (authentication instanceof JwtAuthenticationToken jwtAuthenticationToken) {
@@ -59,11 +49,8 @@ public class KeycloakPermissionService {
         return isValidUmaTicket;
     }
 
-    public boolean requestUmaTicket(String accessToken, String uri, HttpMethod httpMethod){
+    private boolean requestUmaTicket(String accessToken, String uri, HttpMethod httpMethod){
         // 접근한 메소드
-
-
-
         return keycloakAdminClient.findResourceByUri(uri)
                 .map(resource -> {
                     // 스코프를 찾아서 있으면 요청하고, 없으면 만들어서라도 리턴한다.
@@ -76,43 +63,25 @@ public class KeycloakPermissionService {
 
     }
 
-    public List<PermissionRule> getPermissionRules() {
-        return keycloakAdminClient.getPermissions()
-                .stream()
-                .map(PermissionRule::of)
-                .map(this::buildPermissionRuleWithAssociations)
-                .collect(Collectors.toList());
-    }
-
-    private PermissionRule buildPermissionRuleWithAssociations(PermissionRule permissionRule) {
-        resourceAssociationService.associateResource(permissionRule);
-        roleAssociationService.associateRole(permissionRule);
-        return permissionRule;
-    }
 
 
-    public List<Resource> getResources() {
+    private List<Resource> getResources() {
         return keycloakAdminClient.getResources();
     }
 
-    public List<Resource> hasNoPermissionsResources(){
+
+    private List<Resource> hasNoPermissionsResources(){
         return getResources()
                 .stream()
                 .filter(Resource::emptyPermissions)
                 .collect(Collectors.toList());
     }
 
-    public boolean isNoPermission(String targetUrl) {
-        AntPathMatcher antPathMatcher = new AntPathMatcher();
-        return hasNoPermissionsResources().stream()
-                .anyMatch(resource ->
-                      resource.getUris()
-                            .stream()
-                            .anyMatch(uri-> antPathMatcher.match(uri,targetUrl))
-
-
-                );
+    private List<Resource> hasPermissionsResources(){
+        return getResources()
+                .stream()
+                .filter(Resource::hasPermissions)
+                .collect(Collectors.toList());
     }
-
 
 }
