@@ -5,10 +5,9 @@ import com.polio.poliokeycloak.keycloak.client.dto.PermissionRule;
 import com.polio.poliokeycloak.keycloak.client.dto.Resource;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
-import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
-import org.springframework.security.web.server.authorization.AuthorizationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.util.AntPathMatcher;
 
@@ -31,23 +30,24 @@ public class KeycloakPermissionService {
                 .collect(Collectors.toList());
     }
 
-    @Deprecated
-    public boolean umaCheck(AuthorizationContext authorizationContext, Authentication authentication, String uri){
-        authorizationContext.getExchange().getRequest().getMethod();
+    public List<String> getPermissionUris(){
+        return getUris()
+                .stream()
+                .filter(uri-> !isNoPermission(uri))
+                .collect(Collectors.toList());
+    }
 
-        boolean isValidUmaTicket =false;
-        if (authentication instanceof JwtAuthenticationToken jwtAuthenticationToken) {
-            String tokenValue = jwtAuthenticationToken.getToken().getTokenValue();
-            isValidUmaTicket = requestUmaTicket(tokenValue,
-                    uri,authorizationContext.getExchange().getRequest().getMethod());
+    public List<String> getHasNoPermisUris(){
+       return hasNoPermissionsResources().stream()
+                .flatMap(resource -> resource.getUris().stream())
+                .toList();
+    }
 
-        }
-
-        return isValidUmaTicket;
+    public AuthorizationDecision decide(HttpMethod httpMethod, Authentication authentication, String uri) {
+        return new AuthorizationDecision(umaCheck(httpMethod, authentication, uri));
     }
 
     public boolean umaCheck(HttpMethod httpMethod, Authentication authentication, String uri){
-
 
         boolean isValidUmaTicket =false;
         if (authentication instanceof JwtAuthenticationToken jwtAuthenticationToken) {
