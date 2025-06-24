@@ -61,3 +61,19 @@ Keycloak 기반의 동적 인가 구조를 Spring Cloud Gateway에 연동하여,
    | (인가 통과 시)
    v
 [polio-api] ← 실제 요청 처리
+
+```
+
+## 🔄 적용예시
+### 🔧 1. Gradle 의존성 설정
+    implementation 'com.github.angularJS80:polio-keycloak:0.1.0'
+
+### 🔧 2. Security Config 설정
+    https://github.com/angularJS80/polio-gateway/blob/main/src/main/java/com/polio/gateway/security/GatewaySecurityConfig.java
+
+### 🔧 3. PermissionRuleUriMapper 구현
+    https://github.com/angularJS80/polio-gateway/blob/main/src/main/java/com/polio/gateway/security/authroization/PermissionRuleUriMapper.java
+
+## 🔐 4. Keycloak 전용 JWT 권한 변환기
+    https://github.com/angularJS80/polio-gateway/blob/main/src/main/java/com/polio/gateway/security/util/JwtUtil.java
+
