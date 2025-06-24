@@ -4,11 +4,19 @@ Spring Cloud Gateway에서 [Keycloak](https://www.keycloak.org/)과 연동하여
 
 > 인가 로직을 코드에서 분리하고, Keycloak 정책에 따라 동적으로 적용할 수 있도록 설계되었습니다.
 
+---
+
+## 🗒️ 현재 버전
+
+- **v0.1.0**
+- 커밋: `f26432e4`
+- 릴리스 날짜: 2025-06-24
+
+---
+
 ## 🏗️ polio 인가 아키텍처
 
 Keycloak 기반의 동적 인가 구조를 Spring Cloud Gateway에 연동하여, 실시간 권한 반영과 API 보호를 실현합니다.
-
----
 
 ### 📌 구성요소 역할 분리
 
@@ -37,7 +45,7 @@ Keycloak 기반의 동적 인가 구조를 Spring Cloud Gateway에 연동하여,
 
 ---
 
-### 🔄 요청 흐름
+## 🔄 요청 흐름
 
 ```plaintext
 [Client]
@@ -53,32 +61,3 @@ Keycloak 기반의 동적 인가 구조를 Spring Cloud Gateway에 연동하여,
    | (인가 통과 시)
    v
 [polio-api] ← 실제 요청 처리
-
-
----
-
-## 📦 설치 (Gradle)
-
-```groovy
-implementation 'com.github.angularJS80:polio-keycloak:f26432e4'
-
-## 💡 적용 예시 (`polio-gateway`)
-
-Spring Cloud Gateway에서 `polio-keycloak`을 활용해 URI 기반 인가 처리를 구성한 예시입니다.
-
----
-
-### 🔧 1. Security Config 설정
-https://github.com/angularJS80/polio-gateway/blob/main/src/main/java/com/polio/gateway/security/GatewaySecurityConfig.java
----
-
-## 🛠️ 2. PermissionRuleUriMapper 구현
-
-Keycloak에서 가져온 URI 및 Permission 정보를 기반으로 인가 처리를 설정합니다.
-
-```java
-https://github.com/angularJS80/polio-gateway/blob/main/src/main/java/com/polio/gateway/security/authroization/PermissionRuleUriMapper.java
-
-## 🔐 3. Keycloak 전용 JWT 권한 변환기
-https://github.com/angularJS80/polio-gateway/blob/main/src/main/java/com/polio/gateway/security/util/JwtUtil.java
-
