@@ -48,7 +48,7 @@ public class AccessTokenManager {
     }
 
     public void login(UserLoginRequest request) {
-        UserLoginResponse refreshed = keycloakAuthHelper.auth(request);
+        UserLoginResponse refreshed = keycloakAuthHelper.signIn(request);
         if (refreshed != null && refreshed.accessToken() != null) {
             this.tokenStore.update(refreshed);
         } else {
@@ -59,7 +59,7 @@ public class AccessTokenManager {
 
     private void refreshAccessToken() {
         // KeycloakAuthHelper의 authByRefresh() 메서드를 이용해 토큰을 갱신
-        UserLoginResponse refreshed = keycloakAuthHelper.authByRefresh(tokenStore.getRefreshToken());
+        UserLoginResponse refreshed = keycloakAuthHelper.refresh(tokenStore.getRefreshToken());
 
         if (refreshed != null && refreshed.accessToken() != null) {
             this.tokenStore.update(refreshed);

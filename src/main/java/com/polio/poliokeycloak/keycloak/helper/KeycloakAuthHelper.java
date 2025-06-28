@@ -3,10 +3,12 @@ package com.polio.poliokeycloak.keycloak.helper;
 import com.polio.poliokeycloak.keycloak.client.prop.KeycloakSecurityProperties;
 import com.polio.poliokeycloak.keycloak.helper.dto.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
@@ -14,12 +16,13 @@ import java.util.Map;
 
 @RequiredArgsConstructor
 @Component
+@Slf4j
 public class KeycloakAuthHelper {
 
     private final KeycloakSecurityProperties props;
     private final RestTemplate restTemplate = new RestTemplate();
 
-    public UserLoginResponse auth(UserLoginRequest loginRequest) {
+    public UserLoginResponse signIn(UserLoginRequest loginRequest) {
         String tokenUrl = props.getServerUrl() + "/realms/" + props.getRealm() + "/protocol/openid-connect/token";
 
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
@@ -35,7 +38,26 @@ public class KeycloakAuthHelper {
         return parseTokenResponse(response);
     }
 
-    public UserLoginResponse authByRefresh(String refreshToken) {
+    public boolean signOut(String refreshToken) {
+        String logoutUrl = props.getServerUrl() + "/realms/" + props.getRealm() + "/protocol/openid-connect/logout";
+
+        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+        body.add("client_id", props.getClientId());
+        body.add("client_secret", props.getClientSecret());
+        body.add("refresh_token", refreshToken);
+
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers());
+
+        try {
+            ResponseEntity<Void> response = restTemplate.postForEntity(logoutUrl, request, Void.class);
+            return response.getStatusCode().is2xxSuccessful();
+        } catch (Exception e) {
+            log.error("signOut error", e);
+            return false;
+        }
+    }
+
+    public UserLoginResponse refresh(String refreshToken) {
         String tokenUrl = props.getServerUrl() + "/realms/" + props.getRealm() + "/protocol/openid-connect/token";
 
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
@@ -103,7 +125,7 @@ public class KeycloakAuthHelper {
     }
 
     private String getAdminAccessToken() {
-        return auth(new UserLoginRequest(props.getUsername(), props.getPassword())).accessToken();
+        return signIn(new UserLoginRequest(props.getUsername(), props.getPassword())).accessToken();
     }
 
     private String findUserIdByUsername(String username) {
