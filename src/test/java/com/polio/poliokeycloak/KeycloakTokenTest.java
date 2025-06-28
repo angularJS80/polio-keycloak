@@ -43,7 +43,7 @@ class KeycloakTokenTest {
         keycloakAuthHelper.regist(registerRequest);
 
         UserLoginRequest request = new UserLoginRequest(username, password);
-        UserLoginResponse response = keycloakAuthHelper.auth(request);
+        UserLoginResponse response = keycloakAuthHelper.signIn(request);
 
         assertNotNull(response.accessToken());
         assertNotNull(response.refreshToken());
@@ -62,7 +62,7 @@ class KeycloakTokenTest {
         UserRegisterRequest registerRequest = new UserRegisterRequest(username, password, email);
         keycloakAuthHelper.regist(registerRequest);
         UserLoginRequest request = new UserLoginRequest(username, password);
-        UserLoginResponse response = keycloakAuthHelper.auth(request);
+        UserLoginResponse response = keycloakAuthHelper.signIn(request);
         UserDeleteRequest deleteRequest = new UserDeleteRequest(username);
         keycloakAuthHelper.delete(deleteRequest);
     }
@@ -70,7 +70,7 @@ class KeycloakTokenTest {
     //@Test
     void login(){
         UserLoginRequest request = new UserLoginRequest("tempuser_df7a8318-8238-4029-938b-58de880e6435", "1234");
-        UserLoginResponse response = keycloakAuthHelper.auth(request);
+        UserLoginResponse response = keycloakAuthHelper.signIn(request);
         System.out.println("Refreshed Token: " + response.refreshToken());
     }
 

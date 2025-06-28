@@ -11,6 +11,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
@@ -71,7 +72,7 @@ public class KeycloakAuthHelper {
         return parseTokenResponse(response);
     }
 
-    public void regist(UserRegisterRequest req) {
+    public String regist(UserRegisterRequest req) {
         String url = props.getServerUrl() + "/admin/realms/" + props.getRealm() + "/users";
         String accessToken = getAdminAccessToken();
 
@@ -91,7 +92,15 @@ public class KeycloakAuthHelper {
         );
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
-        restTemplate.postForEntity(url, request, Void.class);
+        ResponseEntity<Void> response = restTemplate.postForEntity(url, request, Void.class);
+
+        if (response.getStatusCode().is2xxSuccessful()) {
+            URI location = response.getHeaders().getLocation();
+            if (location != null) {
+                return location.getPath().substring(location.getPath().lastIndexOf('/') + 1);
+            }
+        }
+        throw new RuntimeException("사용자 등록 실패");
     }
 
     public void delete(UserDeleteRequest req) {
