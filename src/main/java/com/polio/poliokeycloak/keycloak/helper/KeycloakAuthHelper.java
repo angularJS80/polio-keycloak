@@ -12,6 +12,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -114,6 +115,26 @@ public class KeycloakAuthHelper {
         HttpEntity<Void> request = new HttpEntity<>(headers);
         restTemplate.exchange(url, HttpMethod.DELETE, request, Void.class);
     }
+
+    public void changeUserPassword(String userId, String newPassword) {
+        String adminToken = getAdminAccessToken(); // 관리자의 access token
+
+        String url = props.getServerUrl() + "/admin/realms/" + props.getRealm() + "/users/" + userId + "/reset-password";
+
+        // 요청 바디 구성
+        Map<String, Object> credentials = new HashMap<>();
+        credentials.put("type", "password");
+        credentials.put("value", newPassword);
+        credentials.put("temporary", false); // true로 설정 시, 다음 로그인 시 비밀번호 변경 요구
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(adminToken);
+
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(credentials, headers);
+        restTemplate.put(url, request);
+    }
+
 
     private HttpHeaders headers() {
         HttpHeaders headers = new HttpHeaders();
