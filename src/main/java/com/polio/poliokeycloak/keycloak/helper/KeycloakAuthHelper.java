@@ -128,22 +128,19 @@ public class KeycloakAuthHelper {
         return parseTokenResponse(response);
     }
 
-    public List<Map<String, Object>> findUserByEmail(String email) {
-        String url = props.getServerUrl() + "/admin/realms/" + props.getRealm() + "/users?email=" + UriUtils.encode(email, StandardCharsets.UTF_8);
 
+    public String findUserByEmail(String email) {
+        String url = props.getServerUrl() + "/admin/realms/" + props.getRealm() + "/users?email=" + email;
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(getAdminAccessToken());
 
         HttpEntity<Void> request = new HttpEntity<>(headers);
-
-        ResponseEntity<List> response = restTemplate.exchange(
-                url,
-                HttpMethod.GET,
-                request,
-                List.class
-        );
-
-        return response.getBody(); // List<Map<String, Object>> 형태의 사용자 목록 반환
+        ResponseEntity<List> response = restTemplate.exchange(url, HttpMethod.GET, request, List.class);
+        if (response.getBody() != null && !response.getBody().isEmpty()) {
+            Map<String, Object> user = (Map<String, Object>) response.getBody().get(0);
+            return (String) user.get("id");
+        }
+        return null;
     }
 
 

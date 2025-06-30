@@ -2,10 +2,8 @@ package com.polio.poliokeycloak;
 
 import com.polio.poliokeycloak.keycloak.helper.AccessTokenManager;
 import com.polio.poliokeycloak.keycloak.helper.KeycloakAuthHelper;
-import com.polio.poliokeycloak.keycloak.helper.dto.UserDeleteRequest;
-import com.polio.poliokeycloak.keycloak.helper.dto.UserLoginRequest;
-import com.polio.poliokeycloak.keycloak.helper.dto.UserLoginResponse;
-import com.polio.poliokeycloak.keycloak.helper.dto.UserRegisterRequest;
+import com.polio.poliokeycloak.keycloak.helper.dto.*;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -129,5 +127,18 @@ class KeycloakTokenTest {
         doneLatch.await();
 
     }
+/*
+    @Test
+    public void getTokenForFindPassword(){
+        String a = keycloakAuthHelper.findUserByEmail("tutuatutu1@gmail.com");
+
+
+        String accessToken = keycloakAuthHelper.tokenExchangeAsUser(
+                new ExchangeUserRequest(a, "polio-toy-client-action","password-reset")
+        ).accessToken();
+        System.out.println(accessToken);
+    }*/
+
+
 
 }
