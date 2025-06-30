@@ -8,10 +8,11 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriUtils;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,7 @@ public class KeycloakAuthHelper {
         ResponseEntity<Map> response = restTemplate.postForEntity(tokenUrl, request, Map.class);
         return parseTokenResponse(response);
     }
+
 
     public boolean signOut(String refreshToken) {
         String logoutUrl = props.getServerUrl() + "/realms/" + props.getRealm() + "/protocol/openid-connect/logout";
@@ -103,6 +105,48 @@ public class KeycloakAuthHelper {
         }
         throw new RuntimeException("사용자 등록 실패");
     }
+
+
+    public UserLoginResponse tokenExchangeAsUser(ExchangeUserRequest exchangeUserRequest) {
+        String tokenUrl = props.getServerUrl() + "/realms/" + props.getRealm() + "/protocol/openid-connect/token";
+
+        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+        body.add("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange");
+        body.add("client_id", props.getClientId());
+        body.add("client_secret", props.getClientSecret());
+        body.add("subject_token", getAdminAccessToken());
+        body.add("requested_subject", exchangeUserRequest.requestedSubject());
+        body.add("audience", exchangeUserRequest.audience());
+        body.add("scope", exchangeUserRequest.scope());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
+
+        ResponseEntity<Map> response = restTemplate.postForEntity(tokenUrl, request, Map.class);
+        return parseTokenResponse(response);
+    }
+
+    public List<Map<String, Object>> findUserByEmail(String email) {
+        String url = props.getServerUrl() + "/admin/realms/" + props.getRealm() + "/users?email=" + UriUtils.encode(email, StandardCharsets.UTF_8);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(getAdminAccessToken());
+
+        HttpEntity<Void> request = new HttpEntity<>(headers);
+
+        ResponseEntity<List> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                request,
+                List.class
+        );
+
+        return response.getBody(); // List<Map<String, Object>> 형태의 사용자 목록 반환
+    }
+
+
 
     public void delete(UserDeleteRequest req) {
         String userId = findUserIdByUsername(req.username());
