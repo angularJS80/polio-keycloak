@@ -139,6 +139,13 @@ class KeycloakTokenTest {
         System.out.println(accessToken);
     }*/
 
+/*
+    @Test
+    public void getLoginByCode(){
+        keycloakAuthHelper.refreshByCode(new IdpCodeLoginRequest("7e459510-8249-4c83-a0b8-c996dffbba89.3229c577-6cde-4954-ba92-36260e41666e.3dd254b1-504c-4b8b-b93c-563fdccfc979","http://localhost:8080/auth/callback"));
+    //http://localhost:8089/realms/polio/protocol/openid-connect/auth?client_id=polio-toy-client&redirect_uri=http://localhost:8080/auth/callback&response_type=code&scope=openid%20email%20profile&kc_idp_hint=github
+
+    }*/
 
 
 }

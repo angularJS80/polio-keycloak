@@ -75,6 +75,8 @@ public class KeycloakAuthHelper {
         return parseTokenResponse(response);
     }
 
+
+
     public String regist(UserRegisterRequest req) {
         String url = props.getServerUrl() + "/admin/realms/" + props.getRealm() + "/users";
         String accessToken = getAdminAccessToken();
@@ -142,6 +144,22 @@ public class KeycloakAuthHelper {
         }
         return null;
     }
+
+    public UserLoginResponse refreshByCode(CodeLoginRequest codeLoginRequest) {
+        String tokenUrl = props.getServerUrl() + "/realms/" + props.getRealm() + "/protocol/openid-connect/token";
+
+        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+        body.add("grant_type", "authorization_code");
+        body.add("client_id", props.getClientId());
+        body.add("client_secret", props.getClientSecret());
+        body.add("code", codeLoginRequest.code());
+        body.add("redirect_uri", codeLoginRequest.redirectUri());
+
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers());
+        ResponseEntity<Map> response = restTemplate.postForEntity(tokenUrl, request, Map.class);
+        return parseTokenResponse(response);
+    }
+
 
 
 

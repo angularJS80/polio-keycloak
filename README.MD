@@ -57,6 +57,15 @@ Keycloak 기반의 동적 인가 구조를 Spring Cloud Gateway에 연동하여,
 
 ---
 
+token-exchange 
+1. 키클락 실행에 퍼미션, exchange 관련 옵션 설정 
+2. 교환대상 클라이언트를 선택 > 퍼미션탭 > 퍼미션 활성화
+3. token-exchange 선택 
+4. Policy 선택 > create client policy (polio-toy-client-token-exchange-policy )
+5. 
+
+
+  
 ## 📦 설치 (Gradle)
 
 ```groovy
