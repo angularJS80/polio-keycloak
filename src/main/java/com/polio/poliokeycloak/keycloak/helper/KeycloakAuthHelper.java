@@ -13,6 +13,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.util.UriUtils;
 
 import java.net.URI;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
@@ -165,12 +166,15 @@ public class KeycloakAuthHelper {
         // 기본 인증 요청 URL 구성
         String idpUrl = props.getServerUrl() + "/realms/" + props.getRealm() + "/protocol/openid-connect/auth";
 
+        String encodedScope = URLEncoder.encode(oauthLinkRequest.scope(), StandardCharsets.UTF_8);
+
+
         // 쿼리 스트링 조합
         return UriComponentsBuilder.fromHttpUrl(idpUrl)
                 .queryParam("client_id", props.getClientId())
                 .queryParam("redirect_uri", oauthLinkRequest.redirectUri())
                 .queryParam("response_type", "code")
-                .queryParam("scope", oauthLinkRequest.scope())
+                .queryParam("scope", encodedScope)
                 .queryParam("kc_idp_hint", oauthLinkRequest.idp())
                 .build(true) // 인코딩
                 .toUriString();
