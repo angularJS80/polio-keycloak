@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.util.UriUtils;
 
 import java.net.URI;
@@ -159,6 +160,22 @@ public class KeycloakAuthHelper {
         ResponseEntity<Map> response = restTemplate.postForEntity(tokenUrl, request, Map.class);
         return parseTokenResponse(response);
     }
+
+    public String getOauthIdpLoginLink(OauthLinkRequest oauthLinkRequest) {
+        // 기본 인증 요청 URL 구성
+        String idpUrl = props.getServerUrl() + "/realms/" + props.getRealm() + "/protocol/openid-connect/auth";
+
+        // 쿼리 스트링 조합
+        return UriComponentsBuilder.fromHttpUrl(idpUrl)
+                .queryParam("client_id", props.getClientId())
+                .queryParam("redirect_uri", oauthLinkRequest.redirectUri())
+                .queryParam("response_type", "code")
+                .queryParam("scope", oauthLinkRequest.scope())
+                .queryParam("kc_idp_hint", oauthLinkRequest.idp())
+                .build(true) // 인코딩
+                .toUriString();
+    }
+
 
 
 
