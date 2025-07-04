@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.LinkedMultiValueMap;
@@ -35,6 +36,63 @@ public class KeycloakAdminClient {
     private Map<String, String> cachedRoleIdNameMap;
     public static ClientAuthMeta CLIENT_AUTH_META;
 
+    private final AdminTokenHolder tokenHolder = new AdminTokenHolder();
+
+
+    // 토큰 요청 메서드
+    public synchronized void obtainToken(boolean useRefresh) {
+        String tokenUrl = props.getServerUrl() + "/realms/" + props.getRealm() + "/protocol/openid-connect/token";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+
+        if (useRefresh && tokenHolder.getRefreshToken() != null) {
+            params.add("grant_type", "refresh_token");
+            params.add("refresh_token", tokenHolder.getRefreshToken());
+        } else {
+            params.add("grant_type", "password");
+            params.add("username", props.getUsername());
+            params.add("password", props.getPassword());
+        }
+
+        params.add("client_id", props.getClientId());
+        params.add("client_secret", props.getClientSecret());
+
+        HttpEntity<?> request = new HttpEntity<>(params, headers);
+        ResponseEntity<Map> response = restTemplate.postForEntity(tokenUrl, request, Map.class);
+        Map body = response.getBody();
+
+        tokenHolder.update(
+                (String) body.get("access_token"),
+                (String) body.get("refresh_token"),
+                (Integer) body.get("expires_in")
+        );
+    }
+
+    public String getValidAccessToken() {
+        if (tokenHolder.isExpiringSoon()) {
+            obtainToken(true); // refresh_token 이용해서 갱신
+        }
+        return tokenHolder.getAccessToken();
+    }
+
+    public HttpEntity<?> makeAccessHeader() {
+        String token = getValidAccessToken();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+        return new HttpEntity<>(headers);
+    }
+
+    // === 👇 추가: 1분마다 갱신 체크 ===
+    //@Scheduled(fixedDelay = 60000) // 1분마다
+    public void refreshIfNeeded() {
+        if (tokenHolder.isExpiringSoon()) {
+            log.info("Token expiring soon. Refreshing...");
+            obtainToken(true);
+        }
+    }
+
     public String obtainAdminToken() {
         String tokenUrl = props.getServerUrl() + "/realms/" + props.getRealm() + "/protocol/openid-connect/token";
 
@@ -52,13 +110,13 @@ public class KeycloakAdminClient {
         ResponseEntity<Map> response = restTemplate.postForEntity(tokenUrl, request, Map.class);
         return (String) response.getBody().get("access_token");
     }
-
+/*
     private HttpEntity<?> makeAccessHeader() {
         String token = obtainAdminToken();
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(token);
         return new HttpEntity<>(headers);
-    }
+    }*/
 
     private List<Resource> retrieveAllResources() {
         String resourceUrl = String.format("%s/admin/realms/%s/clients/%s/authz/resource-server/resource",
@@ -252,9 +310,27 @@ public class KeycloakAdminClient {
 
     @PostConstruct
     public void initialize() {
+        obtainToken(false);
         HTTP_ENTITY = makeAccessHeader();
         makeClientAuthMeta();
     }
+/*
+    @Scheduled(fixedDelay = 60000)
+    public void refreshIfNeeded() {
+        int threshold = props.getTokenRefreshThresholdSeconds();
+        if (tokenHolder.isExpiringSoon(threshold)) {
+            log.info("Token expiring within {} seconds. Refreshing...", threshold);
+            obtainToken(true);
+        }
+    }*/
+/*
+    public String getValidAccessToken() {
+        int threshold = props.getTokenRefreshThresholdSeconds();
+        if (tokenHolder.isExpiringSoon(threshold)) {
+            obtainToken(true);
+        }
+        return tokenHolder.getAccessToken();
+    }*/
 
     public void refreshClientAuthMeta() {
         HTTP_ENTITY = makeAccessHeader();

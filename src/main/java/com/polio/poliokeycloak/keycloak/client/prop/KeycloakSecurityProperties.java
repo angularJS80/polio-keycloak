@@ -14,4 +14,5 @@ public class KeycloakSecurityProperties {
     private String clientSecret;
     private String username;
     private String password;
+    private int tokenRefreshThresholdSeconds = 60;
 }
