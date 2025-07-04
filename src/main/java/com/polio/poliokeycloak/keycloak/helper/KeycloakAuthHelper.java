@@ -1,5 +1,7 @@
 package com.polio.poliokeycloak.keycloak.helper;
 
+import com.polio.poliokeycloak.keycloak.client.AdminTokenHolder;
+import com.polio.poliokeycloak.keycloak.client.KeycloakAdminClient;
 import com.polio.poliokeycloak.keycloak.client.prop.KeycloakSecurityProperties;
 import com.polio.poliokeycloak.keycloak.helper.dto.*;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,7 @@ public class KeycloakAuthHelper {
 
     private final KeycloakSecurityProperties props;
     private final RestTemplate restTemplate = new RestTemplate();
+    private final KeycloakAdminClient keycloakAdminClient;
 
     public UserLoginResponse signIn(UserLoginRequest loginRequest) {
         String tokenUrl = props.getServerUrl() + "/realms/" + props.getRealm() + "/protocol/openid-connect/token";
@@ -81,10 +84,9 @@ public class KeycloakAuthHelper {
 
     public String regist(UserRegisterRequest req) {
         String url = props.getServerUrl() + "/admin/realms/" + props.getRealm() + "/users";
-        String accessToken = getAdminAccessToken();
 
         HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(accessToken);
+        headers.setBearerAuth(keycloakAdminClient.getValidAccessToken());
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         Map<String, Object> payload = Map.of(
@@ -118,7 +120,7 @@ public class KeycloakAuthHelper {
         body.add("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange");
         body.add("client_id", props.getClientId());
         body.add("client_secret", props.getClientSecret());
-        body.add("subject_token", getAdminAccessToken());
+        body.add("subject_token", keycloakAdminClient.getValidAccessToken());
         body.add("requested_subject", exchangeUserRequest.requestedSubject());
         body.add("audience", exchangeUserRequest.audience());
         body.add("scope", exchangeUserRequest.scope());
@@ -136,7 +138,7 @@ public class KeycloakAuthHelper {
     public String findUserByEmail(String email) {
         String url = props.getServerUrl() + "/admin/realms/" + props.getRealm() + "/users?email=" + email;
         HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(getAdminAccessToken());
+        headers.setBearerAuth(keycloakAdminClient.getValidAccessToken());
 
         HttpEntity<Void> request = new HttpEntity<>(headers);
         ResponseEntity<List> response = restTemplate.exchange(url, HttpMethod.GET, request, List.class);
@@ -190,14 +192,13 @@ public class KeycloakAuthHelper {
 
         String url = props.getServerUrl() + "/admin/realms/" + props.getRealm() + "/users/" + userId;
         HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(getAdminAccessToken());
+        headers.setBearerAuth(keycloakAdminClient.getValidAccessToken());
 
         HttpEntity<Void> request = new HttpEntity<>(headers);
         restTemplate.exchange(url, HttpMethod.DELETE, request, Void.class);
     }
 
     public void changeUserPassword(UserChangePasswordRequest changePasswordRequest) {
-        String adminToken = getAdminAccessToken(); // 관리자의 access token
 
         String url = props.getServerUrl() + "/admin/realms/" + props.getRealm() + "/users/" + changePasswordRequest.userId() + "/reset-password";
 
@@ -209,7 +210,7 @@ public class KeycloakAuthHelper {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(adminToken);
+        headers.setBearerAuth(keycloakAdminClient.getValidAccessToken());
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(credentials, headers);
         restTemplate.put(url, request);
@@ -234,14 +235,10 @@ public class KeycloakAuthHelper {
         throw new RuntimeException("Keycloak 로그인 실패: " + response.getStatusCode());
     }
 
-    private String getAdminAccessToken() {
-        return signIn(new UserLoginRequest(props.getUsername(), props.getPassword())).accessToken();
-    }
-
     private String findUserIdByUsername(String username) {
         String url = props.getServerUrl() + "/admin/realms/" + props.getRealm() + "/users?username=" + username;
         HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(getAdminAccessToken());
+        headers.setBearerAuth(keycloakAdminClient.getValidAccessToken());
 
         HttpEntity<Void> request = new HttpEntity<>(headers);
         ResponseEntity<List> response = restTemplate.exchange(url, HttpMethod.GET, request, List.class);
