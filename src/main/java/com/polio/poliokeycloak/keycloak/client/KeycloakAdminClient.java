@@ -85,7 +85,7 @@ public class KeycloakAdminClient {
     }
 
     // === 👇 추가: 1분마다 갱신 체크 ===
-    //@Scheduled(fixedDelay = 60000) // 1분마다
+    @Scheduled(fixedDelay = 60000) // 1분마다
     public void refreshIfNeeded() {
         if (tokenHolder.isExpiringSoon()) {
             log.info("Token expiring soon. Refreshing...");
